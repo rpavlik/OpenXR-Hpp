@@ -93,7 +93,7 @@ public:
 static_assert(sizeof(CompositionLayerBaseHeader) == sizeof(XrCompositionLayerBaseHeader),
     "struct and wrapper have different size!");
 
-//# for struct in gen.api_structures if not struct.name.startswith("XrBase") and not struct.name.endswith("BaseHeader")
+//# for struct in gen.api_structures if not struct.name in gen.skip_projection
 //#     set projected_type = project_type_name(struct.name)
 //#     set typed_struct = is_tagged_type(struct.name)
 //#     set member_count = struct_member_count(struct)

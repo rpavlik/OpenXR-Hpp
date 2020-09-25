@@ -43,6 +43,13 @@ MANUALLY_PROJECTED = set((
     "XrPath",
 ))
 
+SKIP_PROJECTION = set([
+    "XrBaseInStruct",
+    "XrBaseOutStruct",
+    # the GUID initialization is tricky - works best if both param and member are std::array
+    "XrSpatialGraphNodeSpaceCreateInfoMSFT",
+])
+
 # Determining this heuristically appears to be impossible
 INHERITANCE = {
     'XrSwapchainImageBaseHeader': set((
@@ -794,6 +801,8 @@ class CppGenerator(AutomaticSourceOutputGenerator):
         self.struct_parents = {child.elem.get('name'): parent for child, parent in struct_parents
                                if parent is not None}
         self.parents = set(self.struct_parents.values())
+        
+        self.skip_projection = SKIP_PROJECTION.union(self.parents)
 
         def children_of(t):
             return set(child for child, parent in self.struct_parents.items() if parent == t)
