@@ -1,16 +1,18 @@
-# Copyright 2019 Collabora, Ltd.
+# Copyright 2019-2020 Collabora, Ltd.
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE_1_0.txt or copy at
 # http://www.boost.org/LICENSE_1_0.txt)
 #
 # Original Author:
-# 2019 Ryan Pavlik <ryan.pavlik@collabora.com>
+# 2019-2020 Ryan Pavlik <ryan.pavlik@collabora.com>
 
 #.rst:
 # FindOpenXR
 # ----------
 #
 # Find various parts of OpenXR 1.0.
+#
+# Requires CMake 3.3 for use with the CMake config file.
 #
 # COMPONENTS
 # ^^^^^^^^^^
@@ -62,6 +64,53 @@ if(WIN32)
 else()
     set(OPENXR_STATIC OFF)
 endif()
+
+###
+# Fix up list of requested components
+###
+if(NOT OpenXR_FIND_COMPONENTS)
+    # Default to headers and loader
+    set(OpenXR_FIND_COMPONENTS headers loader)
+endif()
+
+if("${OpenXR_FIND_COMPONENTS}" MATCHES "scripts"
+   AND NOT "${OpenXR_FIND_COMPONENTS}" MATCHES "registry")
+    # scripts depend on registry (mostly).
+    list(APPEND OpenXR_FIND_COMPONENTS registry)
+endif()
+
+if("${OpenXR_FIND_COMPONENTS}" MATCHES "loader"
+   AND NOT "${OpenXR_FIND_COMPONENTS}" MATCHES "headers")
+    # loader depends on headers.
+    list(APPEND OpenXR_FIND_COMPONENTS headers)
+endif()
+
+if("${OpenXR_FIND_COMPONENTS}" MATCHES "sdkscripts"
+   AND NOT "${OpenXR_FIND_COMPONENTS}" MATCHES "specscripts")
+    # source scripts depend on spec scripts.
+    list(APPEND OpenXR_FIND_COMPONENTS specscripts)
+endif()
+
+###
+# Try the CMake config file if we can find it.
+###
+find_package(OpenXR QUIET NO_MODULE)
+if(OpenXR_FOUND)
+    if(TARGET OpenXR::headers AND NOT TARGET OpenXR::Headers)
+        add_library(OpenXR::Headers INTERFACE IMPORTED)
+        target_link_libraries(OpenXR::Headers INTERFACE OpenXR::headers)
+    endif()
+    if(TARGET OpenXR::openxr_loader AND NOT TARGET OpenXR::Loader)
+        add_library(OpenXR::Loader INTERFACE IMPORTED)
+        target_link_libraries(OpenXR::Loader INTERFACE OpenXR::openxr_loader)
+    endif()
+    if(NOT "${OpenXR_FIND_COMPONENTS}" MATCHES "scripts" AND
+        NOT "${OpenXR_FIND_COMPONENTS}" MATCHES "registry")
+        # We found it all!
+        return()
+    endif()
+endif()
+
 
 ###
 # Assemble lists of places to look
@@ -177,31 +226,6 @@ find_file(
     NAMES xr.xml
     PATHS ${_oxr_registry_search_dirs})
 
-###
-# Fix up list of requested components
-###
-if(NOT OpenXR_FIND_COMPONENTS)
-    # Default to headers and loader
-    set(OpenXR_FIND_COMPONENTS headers loader)
-endif()
-
-if("${OpenXR_FIND_COMPONENTS}" MATCHES "scripts"
-   AND NOT "${OpenXR_FIND_COMPONENTS}" MATCHES "registry")
-    # scripts depend on registry (mostly).
-    list(APPEND OpenXR_FIND_COMPONENTS registry)
-endif()
-
-if("${OpenXR_FIND_COMPONENTS}" MATCHES "loader"
-   AND NOT "${OpenXR_FIND_COMPONENTS}" MATCHES "headers")
-    # loader depends on headers.
-    list(APPEND OpenXR_FIND_COMPONENTS headers)
-endif()
-
-if("${OpenXR_FIND_COMPONENTS}" MATCHES "sdkscripts"
-   AND NOT "${OpenXR_FIND_COMPONENTS}" MATCHES "specscripts")
-    # source scripts depend on spec scripts.
-    list(APPEND OpenXR_FIND_COMPONENTS specscripts)
-endif()
 
 ###
 # Determine if the various requested components are found.
