@@ -45,8 +45,8 @@ MANUALLY_PROJECTED = set((
 ))
 
 SKIP_PROJECTION = set([
-    "XrBaseInStruct",
-    "XrBaseOutStruct",
+    "XrBaseInStructure",
+    "XrBaseOutStructure",
     # the GUID initialization is tricky - works best if both param and member are std::array
     "XrSpatialGraphNodeSpaceCreateInfoMSFT",
 ])
@@ -425,6 +425,9 @@ class CppGenerator(AutomaticSourceOutputGenerator):
             if self._is_base_only(self.dict_structs[param.type]):
                 # This is a polymorphic parameter: skip conversion for now.
                 continue
+            if param.type in SKIP_PROJECTION:
+                # This is a mess to project.
+                continue
             name = param.name
             cpp_type = _project_type_name(param.type)
             if param.is_const:
@@ -795,6 +798,7 @@ class CppGenerator(AutomaticSourceOutputGenerator):
         self.projected_types.update(self.dict_enums.keys())
         self.projected_types.update(self.dict_structs.keys())
         self.projected_types.update(self.dict_bitmasks.keys())
+        self.projected_types.difference_update(SKIP_PROJECTION)
 
         # Every type mentioned in some other type's parentstruct attribute.
         struct_parents = ((otherType, otherType.elem.get('parentstruct'))
